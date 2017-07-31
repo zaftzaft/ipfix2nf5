@@ -61,6 +61,7 @@ class IPFIXDecoder(object):
                 base = self.counter - 4
                 #print(">> data")
                 while self.counter - base < setlen:
+                    print(self.counter, base ,setlen, len(self.raw))
                     if not self.decode_data(setid, {}, 0):
                         self.counter = base + setlen
 
@@ -109,6 +110,7 @@ class IPFIXDecoder(object):
 
         if not template_id in self.template:
             #print(">> template is not exists")
+            print("[*] template {0} is not exists".format(template_id))
             return False
 
         #print(">> template exists")
@@ -119,34 +121,44 @@ class IPFIXDecoder(object):
             name = temp[0]
 
             if temp[0] in (291, 292, 293):
-                #print(">>+ list", temp[0])
+                try:
+                    print(">>+ list", temp[0])
 
-                #print(self.raw[self.counter:self.counter + 1])
-                self.counter += 1 # skip fixed field 0xff
-                attrLen = struct.unpack(">H", self.raw[self.counter:self.counter + 2])[0]
-                self.counter += 2
-                semantic = struct.unpack(">B", self.raw[self.counter:self.counter + 1])[0]
-                self.counter += 1
+                    # sub template Header
+                    if self.raw[self.counter:self.counter + 1] is not b"\xff":
+                        #print(">>@ broken sub template header")
+                        return False
+    #                    print(1)
+    #                    print(self.counter, len(self.raw))
+    #                    print(self.raw[self.counter:self.counter + 4])
+                    #print(self.counter, len(self.raw))
 
-                #print(">>@", "attrLen", attrLen, "semantic", semantic)
+                    self.counter += 1 # skip fixed field 0xff
+                    attrLen = struct.unpack(">H", self.raw[self.counter:self.counter + 2])[0]
+                    self.counter += 2
+                    semantic = struct.unpack(">B", self.raw[self.counter:self.counter + 1])[0]
+                    self.counter += 1
 
-                sub_temp_id = struct.unpack(">H", self.raw[self.counter:self.counter + 2])[0]
-                self.counter += 2
-                sub_temp_len = struct.unpack(">H", self.raw[self.counter:self.counter + 2])[0]
-                self.counter += 2
+                    #print(">>@", "attrLen", attrLen, "semantic", semantic)
 
-                #print("sub_temp_id", sub_temp_id, "sub_temp_len", sub_temp_len)
+                    sub_temp_id = struct.unpack(">H", self.raw[self.counter:self.counter + 2])[0]
+                    self.counter += 2
+                    sub_temp_len = struct.unpack(">H", self.raw[self.counter:self.counter + 2])[0]
+                    self.counter += 2
 
-                if sub_temp_id in self.template:
-                    #print(">>@ sub template exists")
-                    self.decode_data(sub_temp_id, flow, 1)
-                    #print(">>@ sub template exists]")
-                else:
-                    #print(">>@ sub template not exists")
-                    break
+                    #print("sub_temp_id", sub_temp_id, "sub_temp_len", sub_temp_len)
 
+                    if sub_temp_id in self.template:
+                        #print(">>@ sub template exists")
+                        self.decode_data(sub_temp_id, flow, 1)
+                        #print(">>@ sub template exists]")
+                    else:
+                        #print(">>@ sub template not exists")
+                        break
 
-                #break
+                except:
+                    return False
+
 
 
             else:

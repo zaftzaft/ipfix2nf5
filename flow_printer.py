@@ -14,6 +14,7 @@ def flow_printer(flow):
     print("-----")
     isV4 = 8 in flow
     if not isV4:
+        print("6")
         # IPv6 ?
         return False
         #continue
@@ -41,9 +42,13 @@ def flow_printer(flow):
 
     if 85 in flow:
         print(len(flow[85]), len(flow[86]))
-        octets = struct.unpack(">I", flow[85])[0]
-        pkts = struct.unpack(">I", flow[86])[0]
+        octetsFmt = ">I" if len(flow[85]) is 4 else ">Q"
+        pktsFmt = ">I" if len(flow[86]) is 4 else ">Q"
+        octets = struct.unpack(octetsFmt, flow[85])[0]
+        pkts = struct.unpack(pktsFmt, flow[86])[0]
         print("octets:", octets, "pkts:", pkts)
 
     start = struct.unpack(">Q", flow[152])[0]
     end = struct.unpack(">Q", flow[153])[0]
+
+    print(start)

@@ -40,7 +40,8 @@ class IPFIXDecoder(object):
                     #print(self.counter, base + setlen)
                     tempid, fldcount = struct.unpack(">HH", self.raw[self.counter:self.counter + 4])
                     self.counter += 4
-                    #print(">> Template", tempid, fldcount)
+                    #print(">> Template:", tempid, fldcount)
+                    print(">> Template:", tempid)
 
                     self.template[tempid] = []
 
@@ -59,11 +60,12 @@ class IPFIXDecoder(object):
 
             elif setid > 255:
                 base = self.counter - 4
-                #print(">> data")
+                print(">> data")
                 while self.counter - base < setlen:
-                    print(self.counter, base ,setlen, len(self.raw))
+                    #print(self.counter, base ,setlen, len(self.raw))
                     if not self.decode_data(setid, {}, 0):
                         self.counter = base + setlen
+                        print(">> data skip")
 
                        # break
 
@@ -107,6 +109,7 @@ class IPFIXDecoder(object):
 
 
     def decode_data(self, template_id, flow={}, depth=0):
+        broken = False
 
         if not template_id in self.template:
             #print(">> template is not exists")
@@ -122,12 +125,14 @@ class IPFIXDecoder(object):
 
             if temp[0] in (291, 292, 293):
                 try:
-                    print(">>+ list", temp[0])
+                    #print(">>+ list", temp[0])
 
                     # sub template Header
                     if self.raw[self.counter:self.counter + 1] is not b"\xff":
-                        #print(">>@ broken sub template header")
-                        return False
+                        print(">>@ broken sub template header;", temp[0])
+                        broken = True
+                        break
+                        #return False
     #                    print(1)
     #                    print(self.counter, len(self.raw))
     #                    print(self.raw[self.counter:self.counter + 4])
@@ -157,6 +162,7 @@ class IPFIXDecoder(object):
                         break
 
                 except:
+                    print("err")
                     return False
 
 
@@ -170,6 +176,9 @@ class IPFIXDecoder(object):
 
         if depth == 0:
             self.flows.append(flow)
+
+        if broken:
+            return False
 
         return True
 

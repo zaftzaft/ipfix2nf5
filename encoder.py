@@ -1,6 +1,7 @@
 # Netflow v5 encoder
 import struct
 import ipaddress
+from datetime import datetime
 
 def nf5encoder(flows):
     data = b"";
@@ -27,10 +28,11 @@ def nf5encoder(flows):
     }
 
     header = struct.pack(">HHIIIIBBH",
-        0x0005,
-        0x0001,
-        0x00000000,
-        0x00000000,
+        # FIXME
+        0x0005, # version
+        len(flows), # len
+        0x00000000, # uptime
+        int(datetime.now().timestamp()), # sec
         0x00000000,
         0x00000000,
         0x00,
@@ -43,28 +45,31 @@ def nf5encoder(flows):
     for flow in flows:
         record = default_record.copy()
 
+        print(record)
+
         for key, val in flow.items():
             record[key] = val
 
         data += struct.pack(">IIIHHIIIIHHBBBBHHBBH",
-            int(ipaddress.IPv4Address(record.src_addr)),
-            int(ipaddress.IPv4Address(record.dst_addr)),
-            int(ipaddress.IPv4Address(record.next_hop)),
-            record.input,
-            record.output,
-            record.pkts,
-            record.octets,
-            record.first,
-            record.last,
-            record.src_port,
-            record.dst_port,
+            int(ipaddress.IPv4Address(record["src_addr"])),
+            int(ipaddress.IPv4Address(record["dst_addr"])),
+            int(ipaddress.IPv4Address(record["next_hop"])),
+            record["input"],
+            record["output"],
+            record["pkts"],
+            record["octets"],
+            record["first"],
+            record["last"],
+            record["src_port"],
+            record["dst_port"],
             0x00,
-            record.tcp_flags,
-            record.tos,
-            record.src_as,
-            record.dst_as,
-            record.src_mask,
-            record.dst_mask,
+            record["tcp_flags"],
+            record["protocol"],
+            record["tos"],
+            record["src_as"],
+            record["dst_as"],
+            record["src_mask"],
+            record["dst_mask"],
             0x0000
             )
 

@@ -74,7 +74,10 @@ while True:
 
         nf5 = exporter(flow)
         if nf5:
-            sock.sendto(nf5encoder([nf5]), ("163.138.193.140", 9998))
+            try:
+                sock.sendto(nf5encoder([nf5]), ("163.138.193.140", 9998))
+            except: 
+                pass
 
 
 

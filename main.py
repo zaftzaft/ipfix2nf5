@@ -1,18 +1,26 @@
 import socket
 import struct
 import ipaddress
+import argparse
 from encoder import nf5encoder
 from decoder import IPFIXDecoder
 from flow_printer import flow_printer
 
+parser = argparse.ArgumentParser()
+
+parser.add_argument("-s", "--saddr", required=False, help="bind address", default="0.0.0.0")
+parser.add_argument("-p", "--sport", required=False, type=int, help="bind port", default=9400)
+parser.add_argument("--buf", required=False, type=int, help="buffer size", default=30000)
+
+parser.add_argument("daddr")
+parser.add_argument("dport", type=int)
+args = parser.parse_args()
+
+
 ipfix = IPFIXDecoder()
 
-bind_address = "0.0.0.0"
-bind_port = 9400
-buf = 30000
-
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock.bind((bind_address, bind_port))
+sock.bind((args.saddr, args.sport))
 
 def exporter(flow):
     if not 4 in flow:
@@ -64,7 +72,7 @@ def exporter(flow):
 
 
 while True:
-    data, addr = sock.recvfrom(buf)
+    data, addr = sock.recvfrom(args.buf)
 
     ipfix.set_raw(data)
     flows = ipfix.decode()
@@ -75,7 +83,7 @@ while True:
         nf5 = exporter(flow)
         if nf5:
             try:
-                sock.sendto(nf5encoder([nf5]), ("163.138.193.140", 9998))
+                sock.sendto(nf5encoder([nf5]), (args.daddr, args.dport))
             except: 
                 pass
 
